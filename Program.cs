@@ -38,10 +38,10 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 
 var app = builder.Build();
 
-const string apiUrl = "https://gpt-showcase-02.dmz.ifbus.de/api/search/1.1/rpc/search/search";
-const string loginUrl = "https://gpt-showcase-02.dmz.ifbus.de/auth/login/basic/";
+const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search";
+const string loginUrl = "https://ps-ig63.ifbus.de/auth/login/basic/";
 const string username = "igadmin";
-const string password = "RQ4stRYb7TV5f00VhpxdQSL4";
+const string password = "igadmin";
 const string baseUrl = "https://your-app-name.onrender.com"; // Replace with the Render public URL
 
 // Map GET /suggest endpoint
