@@ -24,25 +24,26 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Get the dynamic port from the environment variable
+// Get the dynamic port from the environment variable for Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001"; // Default to 5001 if no environment variable is found
 
+// No need for manual SSL configuration on Render, as Render handles this
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    // Listen on the dynamic port provided by Render
+    // Listen on the dynamic port provided by Render (use HTTPS automatically handled by Render)
     serverOptions.ListenAnyIP(int.Parse(port), listenOptions =>
     {
-        listenOptions.UseHttps(); // Backend uses HTTPS
+        listenOptions.UseHttps(); // Render automatically configures SSL, so no need for manual setup
     });
 });
 
 var app = builder.Build();
 
-const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search";
+const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search"; // Your backend API URL
 const string loginUrl = "https://ps-ig63.ifbus.de/auth/login/basic/";
 const string username = "igadmin";
-const string password = "igadmin";
-const string baseUrl = "https://your-app-name.onrender.com"; // Replace with the Render public URL
+const string password = "RQ4stRYb7TV5f00VhpxdQSL4";
+const string baseUrl = "https://your-app-name.onrender.com"; // Replace with the actual public URL from Render
 
 // Map GET /suggest endpoint
 app.MapGet("/suggest", async (HttpContext context) =>
