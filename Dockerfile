@@ -10,4 +10,4 @@ RUN dotnet publish -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "WikipediaAdapter.dll"]
+ENTRYPOINT ["dotnet", "DuckduckgoAdaptor.dll"]
