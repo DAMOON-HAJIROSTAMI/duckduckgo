@@ -17,42 +17,42 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://www.bing.com") // Update this with the allowed origin
+        policy.WithOrigins("https://www.bing.com") // Set the allowed origins here
               .AllowCredentials()
               .WithMethods("GET")
               .WithHeaders("Content-Type");
     });
 });
 
-// Get the dynamic port from the environment variable for Render
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5001"; // Default to 5001 if no environment variable is found
-
+// Don't specify port manually, as Render will handle it
+// In production environments like Render, the dynamic port is provided through the "PORT" environment variable.
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    // Render automatically configures HTTPS, so no need for UseHttps()
-    serverOptions.ListenAnyIP(int.Parse(port)); // Listen on dynamic port
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5001"; // Default to 5001 if no environment variable is found
+    serverOptions.ListenAnyIP(int.Parse(port)); // Render dynamically binds to the port
 });
 
 var app = builder.Build();
 
+// ✅ Enable CORS
+app.UseCors();
+
+HttpClient http = new HttpClient();
+
 const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search"; // Your backend API URL
 const string loginUrl = "https://ps-ig63.ifbus.de/auth/login/basic/";
 const string username = "igadmin";
-const string password = "igadmin";
-const string baseUrl = "https://duckduckgo.onrender.com"; // Replace with the actual public URL from Render
+const string password = "RQ4stRYb7TV5f00VhpxdQSL4";
+const string baseUrl = "https://your-app-name.onrender.com"; // Update this with your Render app's public URL
 
 // Map GET /suggest endpoint
 app.MapGet("/suggest", async (HttpContext context) =>
 {
-    var query = context.Request.Query["qry"]
-        .FirstOrDefault(q => !string.IsNullOrWhiteSpace(q?.Trim()));
+    var query = context.Request.Query["qry"].FirstOrDefault(q => !string.IsNullOrWhiteSpace(q?.Trim()));
 
     if (string.IsNullOrWhiteSpace(query))
     {
-        return Results.Json(
-            new { Suggestions = new object[] { } },
-            new JsonSerializerOptions { PropertyNamingPolicy = null }
-        );
+        return Results.Json(new { Suggestions = new object[] { } });
     }
 
     Console.WriteLine("Received query: " + query);
@@ -65,10 +65,7 @@ app.MapGet("/suggest", async (HttpContext context) =>
     var loginResponse = await client.PostAsync(loginUrl, null);
     if (!loginResponse.Headers.TryGetValues("Set-Cookie", out var cookies))
     {
-        return Results.Json(
-            new { Suggestions = new object[] { }, Error = "Auth failed" },
-            new JsonSerializerOptions { PropertyNamingPolicy = null }
-        );
+        return Results.Json(new { Suggestions = new object[] { }, Error = "Auth failed" });
     }
 
     var sessionCookie = cookies.FirstOrDefault()?.Split(';')[0];
@@ -97,10 +94,7 @@ app.MapGet("/suggest", async (HttpContext context) =>
     if (!response.IsSuccessStatusCode)
     {
         Console.WriteLine($"API call failed: {response.StatusCode}");
-        return Results.Json(
-            new { Suggestions = new object[] { } },
-            new JsonSerializerOptions { PropertyNamingPolicy = null }
-        );
+        return Results.Json(new { Suggestions = new object[] { } });
     }
 
     var resultJson = await response.Content.ReadAsStringAsync();
@@ -197,10 +191,7 @@ app.MapGet("/suggest", async (HttpContext context) =>
     context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
     context.Response.ContentType = "application/json; charset=utf-8";
 
-    return Results.Json(
-        new { Suggestions = suggestions },
-        new JsonSerializerOptions { PropertyNamingPolicy = null }
-    );
+    return Results.Json(new { Suggestions = suggestions });
 });
 
 app.Run();
