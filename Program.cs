@@ -27,14 +27,10 @@ builder.Services.AddCors(options =>
 // Get the dynamic port from the environment variable for Render
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5001"; // Default to 5001 if no environment variable is found
 
-// No need for manual SSL configuration on Render, as Render handles this
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    // Listen on the dynamic port provided by Render (use HTTPS automatically handled by Render)
-    serverOptions.ListenAnyIP(int.Parse(port), listenOptions =>
-    {
-        listenOptions.UseHttps(); // Render automatically configures SSL, so no need for manual setup
-    });
+    // Render automatically configures HTTPS, so no need for UseHttps()
+    serverOptions.ListenAnyIP(int.Parse(port)); // Listen on dynamic port
 });
 
 var app = builder.Build();
@@ -42,17 +38,15 @@ var app = builder.Build();
 const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search"; // Your backend API URL
 const string loginUrl = "https://ps-ig63.ifbus.de/auth/login/basic/";
 const string username = "igadmin";
-const string password = "RQ4stRYb7TV5f00VhpxdQSL4";
+const string password = "igadmin";
 const string baseUrl = "https://your-app-name.onrender.com"; // Replace with the actual public URL from Render
 
 // Map GET /suggest endpoint
 app.MapGet("/suggest", async (HttpContext context) =>
 {
-    // Ensure proper query parsing, using the first non-empty value from `qry`
     var query = context.Request.Query["qry"]
         .FirstOrDefault(q => !string.IsNullOrWhiteSpace(q?.Trim()));
 
-    // If query is empty, return an empty suggestions array
     if (string.IsNullOrWhiteSpace(query))
     {
         return Results.Json(
@@ -61,10 +55,8 @@ app.MapGet("/suggest", async (HttpContext context) =>
         );
     }
 
-    // Log the query for debugging
     Console.WriteLine("Received query: " + query);
 
-    // Authenticate and fetch the session cookie
     var auth = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
     var handler = new HttpClientHandler { UseCookies = false };
     using var client = new HttpClient(handler);
@@ -83,7 +75,6 @@ app.MapGet("/suggest", async (HttpContext context) =>
     client.DefaultRequestHeaders.Clear();
     client.DefaultRequestHeaders.Add("Cookie", sessionCookie);
 
-    // Prepare the request body for fetching search results
     var body = new
     {
         parameters = new
@@ -102,11 +93,9 @@ app.MapGet("/suggest", async (HttpContext context) =>
 
     var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
 
-    // Make the API call
     var response = await client.PostAsync(apiUrl, content);
     if (!response.IsSuccessStatusCode)
     {
-        // If API call fails, log and return empty suggestions
         Console.WriteLine($"API call failed: {response.StatusCode}");
         return Results.Json(
             new { Suggestions = new object[] { } },
@@ -118,7 +107,6 @@ app.MapGet("/suggest", async (HttpContext context) =>
 
     var suggestions = new List<object>
     {
-        // Example suggestion for UI response testing
         new
         {
             Text = "🔧 Test Suggestion",
@@ -131,7 +119,6 @@ app.MapGet("/suggest", async (HttpContext context) =>
         }
     };
 
-    // Parse the result and populate the suggestions list
     using var doc = JsonDocument.Parse(resultJson);
     if (doc.RootElement.TryGetProperty("values", out var values))
     {
@@ -142,7 +129,6 @@ app.MapGet("/suggest", async (HttpContext context) =>
                 string title = null;
                 string displayUrl = null;
 
-                // Safely handle 'common.title' and 'displayurl'
                 if (item.TryGetProperty("common.title", out var titleElement))
                 {
                     if (titleElement.ValueKind == JsonValueKind.Array && titleElement.GetArrayLength() > 0)
@@ -154,12 +140,12 @@ app.MapGet("/suggest", async (HttpContext context) =>
                         }
                         else if (first.ValueKind == JsonValueKind.String)
                         {
-                            title = first.GetString(); // Handle case where it's just a string
+                            title = first.GetString();
                         }
                     }
                     else if (titleElement.ValueKind == JsonValueKind.String)
                     {
-                        title = titleElement.GetString(); // Direct string value case
+                        title = titleElement.GetString();
                     }
                 }
 
@@ -174,12 +160,12 @@ app.MapGet("/suggest", async (HttpContext context) =>
                         }
                         else if (first.ValueKind == JsonValueKind.String)
                         {
-                            displayUrl = first.GetString(); // Handle case where it's just a string
+                            displayUrl = first.GetString();
                         }
                     }
                     else if (urlElement.ValueKind == JsonValueKind.String)
                     {
-                        displayUrl = urlElement.GetString(); // Direct string value case
+                        displayUrl = urlElement.GetString();
                     }
                 }
 
@@ -206,7 +192,6 @@ app.MapGet("/suggest", async (HttpContext context) =>
         }
     }
 
-    // Set response headers for CORS and return the suggestions
     context.Response.Headers.Append("Access-Control-Allow-Origin", "https://www.bing.com");
     context.Response.Headers.Append("Access-Control-Allow-Credentials", "true");
     context.Response.Headers.Append("Access-Control-Allow-Methods", "GET");
