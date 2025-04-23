@@ -39,7 +39,7 @@ const string apiUrl = "https://ps-ig63.ifbus.de/api/search/1.1/rpc/search/search
 const string loginUrl = "https://ps-ig63.ifbus.de/auth/login/basic/";
 const string username = "igadmin";
 const string password = "igadmin";
-const string baseUrl = "https://ducksearch.onrender.com"; // Replace with the actual public URL from Render
+const string baseUrl = "https://duckduckgo.onrender.com"; // Replace with the actual public URL from Render
 
 // Map GET /suggest endpoint
 app.MapGet("/suggest", async (HttpContext context) =>
